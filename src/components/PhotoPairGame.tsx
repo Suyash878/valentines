@@ -57,7 +57,14 @@ export default function PhotoPairGame({
   const [selected, setSelected] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
   const [incorrect, setIncorrect] = useState<number[]>([]);
-  const [images] = useState(() => shuffleArray([...imagePairs]));
+  const [images, setImages] = useState<string[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Shuffle images only on client-side after hydration
+  useEffect(() => {
+    setImages(shuffleArray([...imagePairs]));
+    setIsHydrated(true);
+  }, []);
 
   const handleClick = async (index: number) => {
     if (selected.length === 2 || matched.includes(index) || selected.includes(index)) return;
@@ -88,6 +95,21 @@ export default function PhotoPairGame({
     }
   }, [matched, handleShowProposal]);
 
+  // Don't render until after hydration to prevent mismatch
+  if (!isHydrated) {
+    return (
+      <div className="grid grid-cols-9 gap-1 lg:gap-2 max-w-[95vw] mx-auto place-items-center">
+        {heartLayout.flat().map((index, i) =>
+          index !== null ? (
+            <div key={i} className="w-[11vh] h-[11vh] lg:w-20 lg:h-20 bg-gradient-to-br from-pink-300 to-rose-400 rounded-lg lg:rounded-xl animate-pulse" />
+          ) : (
+            <div key={i} className="w-[11vh] h-[11vh] lg:w-20 lg:h-20" />
+          ),
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-9 gap-1 lg:gap-2 max-w-[95vw] mx-auto place-items-center">
       {/* Image preload */}
@@ -111,12 +133,12 @@ export default function PhotoPairGame({
             className="w-[11vh] h-[11vh] lg:w-20 lg:h-20 relative cursor-pointer"
             whileHover={{ scale: 1.1 }}
             onClick={() => handleClick(index)}
-            style={{ perspective: "1000px" }} // Add perspective for 3D effect
+            style={{ perspective: "1000px" }}
           >
             {/* Back of the card */}
             {!selected.includes(index) && !matched.includes(index) && (
               <motion.div
-                className="w-full h-full bg-gray-300 rounded-sm lg:rounded-md absolute z-10"
+                className="w-full h-full bg-gradient-to-br from-pink-300 to-rose-400 rounded-lg lg:rounded-xl absolute z-10 shadow-lg hover:shadow-rose-300/50 transition-shadow"
                 initial={{ rotateY: 0 }}
                 animate={{
                   rotateY:
@@ -126,13 +148,17 @@ export default function PhotoPairGame({
                 }}
                 transition={{ duration: 0.5 }}
                 style={{ backfaceVisibility: "hidden" }}
-              />
+              >
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-2xl lg:text-3xl">💗</span>
+                </div>
+              </motion.div>
             )}
 
             {/* Front of the card (image) */}
             {(selected.includes(index) || matched.includes(index)) && (
               <motion.div
-                className="w-full h-full absolute"
+                className="w-full h-full absolute rounded-lg lg:rounded-xl overflow-hidden shadow-lg"
                 initial={{ rotateY: -180 }}
                 animate={{ rotateY: 0 }}
                 transition={{ duration: 0.5 }}
@@ -140,9 +166,9 @@ export default function PhotoPairGame({
               >
                 <Image
                   src={images[index]}
-                  alt={`Imagen ${index + 1}`}
+                  alt={`Memory ${index + 1}`}
                   fill
-                  className="rounded-sm lg:rounded-md object-cover"
+                  className="object-cover"
                 />
               </motion.div>
             )}
@@ -150,11 +176,11 @@ export default function PhotoPairGame({
             {/* Incorrect animation */}
             {incorrect.includes(index) && (
               <motion.div
-                className="absolute inset-0"
-                animate={{ scale: [1, 1.1, 1], opacity: [1, 0, 1] }}
+                className="absolute inset-0 rounded-lg lg:rounded-xl"
+                animate={{ scale: [1, 1.1, 1], opacity: [1, 0.5, 1] }}
                 transition={{ duration: 0.5 }}
               >
-                <div className="w-full h-full bg-red-500 rounded-sm lg:rounded-md"></div>
+                <div className="w-full h-full bg-rose-500 rounded-lg lg:rounded-xl"></div>
               </motion.div>
             )}
           </motion.div>
