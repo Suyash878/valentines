@@ -57,7 +57,14 @@ export default function PhotoPairGame({
   const [selected, setSelected] = useState<number[]>([]);
   const [matched, setMatched] = useState<number[]>([]);
   const [incorrect, setIncorrect] = useState<number[]>([]);
-  const [images] = useState(() => shuffleArray([...imagePairs]));
+  const [images, setImages] = useState<string[]>([]);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Shuffle images only on client-side after hydration
+  useEffect(() => {
+    setImages(shuffleArray([...imagePairs]));
+    setIsHydrated(true);
+  }, []);
 
   const handleClick = async (index: number) => {
     if (selected.length === 2 || matched.includes(index) || selected.includes(index)) return;
@@ -87,6 +94,21 @@ export default function PhotoPairGame({
       handleShowProposal();
     }
   }, [matched, handleShowProposal]);
+
+  // Don't render until after hydration to prevent mismatch
+  if (!isHydrated) {
+    return (
+      <div className="grid grid-cols-9 gap-1 lg:gap-2 max-w-[95vw] mx-auto place-items-center">
+        {heartLayout.flat().map((index, i) =>
+          index !== null ? (
+            <div key={i} className="w-[11vh] h-[11vh] lg:w-20 lg:h-20 bg-gradient-to-br from-pink-300 to-rose-400 rounded-lg lg:rounded-xl animate-pulse" />
+          ) : (
+            <div key={i} className="w-[11vh] h-[11vh] lg:w-20 lg:h-20" />
+          ),
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-9 gap-1 lg:gap-2 max-w-[95vw] mx-auto place-items-center">
